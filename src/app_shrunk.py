@@ -4,6 +4,7 @@ import queue
 import numpy as np
 import custom
 import logic_shrunk as logic
+import sounddevice as sd
 
 ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("dark-blue")
@@ -16,6 +17,8 @@ class SmartAlarmUI(ctk.CTk):
         self.title("Smart Alarm")
         self.geometry("600x550")
         self.resizable(False, False)
+
+        self.trigger_mic_permission()
 
         self.alarm_thread = None
         self.stop_event = threading.Event()
@@ -32,6 +35,16 @@ class SmartAlarmUI(ctk.CTk):
         self.build_dashboard_ui()
 
         self.bind_all("<Button-1>", self.remove_focus)
+
+    def trigger_mic_permission(self):
+        """Silently opens and closes the mic to force the macOS permission pop-up."""
+        try:
+            stream = sd.InputStream(samplerate=16000, channels=1)
+            stream.start()
+            stream.stop()
+            stream.close()
+        except Exception as e:
+            print(f"Mic init: {e}")
 
     def remove_focus(self, event):
         try:
@@ -325,46 +338,30 @@ class SmartAlarmUI(ctk.CTk):
                         self.graph_data[key].pop(0)
 
             # --- NATIVE TKINTER GRAPH DRAWING ---
-                        # --- NATIVE TKINTER GRAPH DRAWING ---
-                        if updated:
-                            self.canvas.delete("all")
-                            width = self.canvas.winfo_width()
-                            height = self.canvas.winfo_height()
+            if updated:
+                self.canvas.delete("all")
 
-                            if width > 1 and len(self.graph_data["prob"]) >= 2:
-                                # 1. FAINT REFERENCE LINE (No hard axes)
-                                self.canvas.create_line(0, height / 2, width, height / 2, fill="#333333", dash=(2, 4))
+                # Force Tkinter to calculate accurate geometry dimensions
+                self.canvas.update_idletasks()
+                width = self.canvas.winfo_width()
+                height = self.canvas.winfo_height()
 
-                                # 2. FLOATING LEGEND
-                                self.canvas.create_text(10, 15, text="— Raw", fill="#42A5F5", anchor="w",
-                                                        font=("Arial", 12, "bold"))
-                                self.canvas.create_text(80, 15, text="— EMA", fill="#66BB6A", anchor="w",
-                                                        font=("Arial", 12, "bold"))
-                                self.canvas.create_text(150, 15, text="-- Threshold", fill="#EF5350", anchor="w",
-                                                        font=("Arial", 12, "bold"))
+                # Only draw if we have dimensions and at least 2 points to make a line
+                if width > 1 and height > 1 and len(self.graph_data["prob"]) >= 2:
+                    # 1. FAINT REFERENCE LINE
+                    self.canvas.create_line(0, height / 2, width, height / 2, fill="#333333", dash=(2, 4))
 
-                                # Pixel Math
-                                x_step = width / max(1, 30 - 1)
+                    # 2. FLOATING LEGEND
+                    self.canvas.create_text(10, 15, text="— Raw", fill="#42A5F5", anchor="w",
+                                            font=("Arial", 12, "bold"))
+                    self.canvas.create_text(80, 15, text="— EMA", fill="#66BB6A", anchor="w",
+                                            font=("Arial", 12, "bold"))
+                    self.canvas.create_text(150, 15, text="-- Threshold", fill="#EF5350", anchor="w",
+                                            font=("Arial", 12, "bold"))
 
-                                def get_coords(data_list):
-                                    coords = []
-                                    for i, val in enumerate(data_list):
-                                        x_px = i * x_step
-                                        y_px = height - (val * height)
-                                        coords.extend([x_px, y_px])
-                                    return coords
-
-                                prob_coords = get_coords(self.graph_data["prob"])
-                                ema_coords = get_coords(self.graph_data["ema"])
-                                thresh_coords = get_coords(self.graph_data["thresh"])
-
-                                # 3. SMOOTHED BEZIER CURVES
-                                self.canvas.create_line(*prob_coords, fill="#42A5F5", width=3, smooth=True)
-                                self.canvas.create_line(*ema_coords, fill="#66BB6A", width=3, smooth=True)
-                                self.canvas.create_line(*thresh_coords, fill="#EF5350", width=2, dash=(5, 5))
-
-                    # Pixel Math
-                    x_step = width / max(1, 30 - 1)
+                    # 3. DYNAMIC PIXEL MATH (Fixes the squishing bug)
+                    data_length = len(self.graph_data["prob"])
+                    x_step = width / max(1, data_length - 1)
 
                     def get_coords(data_list):
                         coords = []
@@ -378,13 +375,15 @@ class SmartAlarmUI(ctk.CTk):
                     ema_coords = get_coords(self.graph_data["ema"])
                     thresh_coords = get_coords(self.graph_data["thresh"])
 
-                    # Plot Lines
-                    self.canvas.create_line(*prob_coords, fill="#42A5F5", width=2)
-                    self.canvas.create_line(*ema_coords, fill="#66BB6A", width=2)
+                    # 4. PLOT LINES
+                    self.canvas.create_line(*prob_coords, fill="#42A5F5", width=3, smooth=True)
+                    self.canvas.create_line(*ema_coords, fill="#66BB6A", width=3, smooth=True)
                     self.canvas.create_line(*thresh_coords, fill="#EF5350", width=2, dash=(5, 5))
 
         except queue.Empty:
             pass
+        except Exception as e:
+            print(f"Graph Render Error: {e}")
 
         self.after(500, self.update_dashboard)
 

@@ -2,7 +2,7 @@
 import os
 from PyInstaller.utils.hooks import collect_all
 
-# THE FIX: Collecting the missing Tcl/Tk scripts natively inside the spec
+# Collecting the missing runtime dependencies natively inside the spec
 ctk_datas, ctk_binaries, ctk_hiddenimports = collect_all('customtkinter')
 tk_datas, tk_binaries, tk_hiddenimports = collect_all('tkinter')
 np_datas, np_binaries, np_hiddenimports = collect_all('numpy')
@@ -17,7 +17,6 @@ a = Analysis(
         ('OriginalWeightMetrics.npz', '.'),
         ('sheback.wav', '.'),
         ('Scalers', 'Scalers'),
-        ('MFCC_Scalers', 'MFCC_Scalers'),
     ] + ctk_datas + tk_datas + np_datas,
     hiddenimports=[
         'sounddevice',
@@ -30,7 +29,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'torch', 'torchaudio', 'torchvision', 'pandas', 'matplotlib', 'pygame', 'sqlite3',
+        'torch', 'torchaudio', 'torchvision', 'pandas', 'matplotlib', 'pygame',
     ],
     noarchive=False,
     optimize=0,
@@ -40,31 +39,24 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    [],
-    exclude_binaries=True,
-    name='SmartAlarm',
+    a.binaries,     # Natively include binaries in the execution runtime
+    a.zipfiles,     # Natively include zipfiles in the execution runtime
+    a.datas,        # Natively include datas in the execution runtime
+    name='TheSmartAlarmV2',
     debug=False,
     bootloader_ignore_signals=False,
     strip=True,
-    upx=True,
-    console=False,
+    upx=False,
+    console=True,   # Kept True so we can monitor errors directly from the terminal
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
 )
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=True,
-    upx=True,
-    upx_exclude=[],
-    name='SmartAlarm',
-)
+
 app = BUNDLE(
-    coll,
+    exe,
     name='TheSmartAlarmV2.app',
     icon='icon.icns',
     bundle_identifier='com.toshan.smartalarm',

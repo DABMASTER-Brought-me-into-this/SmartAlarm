@@ -158,3 +158,27 @@ class SmartAlarmLogic:
     Y = np.asarray(Y, dtype=np.float32).reshape(-1, 1)
 
     finetune(X, Y)
+
+
+if __name__ == "__main__":
+  import threading
+  import queue
+  from datetime import datetime, timedelta
+
+  # 1. Set the target time 5 minutes from right now
+  # This guarantees we land squarely inside your 30-minute tracking window immediately
+  target_time = datetime.now() + timedelta(minutes=5)
+  print(f"=== Command Line Diagnostic Mode ===")
+  print(f"Current Time: {datetime.now().time()}")
+  print(f"Target Wake Up Time: {target_time.strftime('%H:%M:%S')}")
+
+  # 2. Instantiate the logic engine directly
+  engine = SmartAlarmLogic(hours=target_time.hour, minutes=target_time.minute)
+
+  # 3. Create the multi-threading synchronization events manually
+  stop_event = threading.Event()
+  snooze_event = threading.Event()
+  data_queue = queue.Queue()
+
+  # 4. Run the loop blocking on the main thread so crashes hit our screen
+  engine.run_alarm(stop_event, snooze_event, data_queue)
