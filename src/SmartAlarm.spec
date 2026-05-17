@@ -1,18 +1,24 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+import sys
 from PyInstaller.utils.hooks import collect_all
 
-# Collecting the missing runtime dependencies natively inside the spec
+# Collecting the missing runtime dependencies cleanly inside the spec
 ctk_datas, ctk_binaries, ctk_hiddenimports = collect_all('customtkinter')
 tk_datas, tk_binaries, tk_hiddenimports = collect_all('tkinter')
 np_datas, np_binaries, np_hiddenimports = collect_all('numpy')
 
 current_dir = os.path.abspath('.')
 
+# DYNAMIC OS CHECK: Only inject the Mac audio library if building on macOS
+custom_binaries = []
+if sys.platform == 'darwin':
+    custom_binaries = [('/Users/tuhi-macos/miniconda3/envs/smart_alarm_env/lib/libsndfile.dylib', '.')]
+
 a = Analysis(
     ['app_shrunk.py'],
     pathex=[current_dir],
-    binaries=[('/Users/tuhi-macos/miniconda3/envs/smart_alarm_env/lib/libsndfile.dylib', '.')] + ctk_binaries + tk_binaries,
+    binaries=custom_binaries + ctk_binaries + tk_binaries,  # Updated to use custom_binaries
     datas=[
         ('OriginalWeightMetrics.npz', '.'),
         ('sheback.wav', '.'),
@@ -29,7 +35,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'torch', 'torchaudio', 'torchvision', 'pandas', 'matplotlib', 'pygame',
+        'torch', 'torchaudio', 'torchvision', 'pandas', 'matplotlib', 'pygame', 'sqlite3',
     ],
     noarchive=False,
     optimize=0,
