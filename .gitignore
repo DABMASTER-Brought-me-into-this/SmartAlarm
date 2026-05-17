@@ -1,0 +1,22 @@
+cat << 'EOF' > .gitignore
+# Environments
+pure_env/
+smart_alarm_env/
+venv/
+.venv/
+env/
+
+# IDEs
+.idea/
+*.swp
+
+# Build files
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+EOF
