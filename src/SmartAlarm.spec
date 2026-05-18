@@ -18,7 +18,7 @@ if sys.platform == 'darwin':
 a = Analysis(
     ['app_shrunk.py'],
     pathex=[current_dir],
-    binaries=custom_binaries + ctk_binaries + tk_binaries,  # Updated to use custom_binaries
+    binaries=custom_binaries + ctk_binaries + tk_binaries,
     datas=[
         ('OriginalWeightMetrics.npz', '.'),
         ('sheback.wav', '.'),
@@ -42,18 +42,18 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+# 1. NAKED BOOTLOADER (Stripped of binaries to prevent memory crashing)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,     # Natively include binaries in the execution runtime
-    a.zipfiles,     # Natively include zipfiles in the execution runtime
-    a.datas,        # Natively include datas in the execution runtime
+    [],
+    exclude_binaries=True,
     name='TheSmartAlarmV2',
     debug=False,
     bootloader_ignore_signals=False,
     strip=True,
     upx=False,
-    console=True,   # Kept True so we can monitor errors directly from the terminal
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -61,12 +61,25 @@ exe = EXE(
     entitlements_file=None,
 )
 
-app = BUNDLE(
+# 2. FOLDER COLLECTION (Safe Windows Architecture)
+coll = COLLECT(
     exe,
-    name='TheSmartAlarmV2.app',
-    icon='icon.icns',
-    bundle_identifier='com.toshan.smartalarm',
-    info_plist={
-        'NSMicrophoneUsageDescription': 'Smart Alarm needs microphone access to monitor room acoustics and detect sleep cycles.',
-    },
+    a.binaries,
+    a.datas,
+    strip=True,
+    upx=False,
+    upx_exclude=[],
+    name='TheSmartAlarmV2',
 )
+
+# 3. MAC APP BUNDLE (Safely sandboxed for macOS only)
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        coll,
+        name='TheSmartAlarmV2.app',
+        icon='icon.icns',
+        bundle_identifier='com.toshan.smartalarm',
+        info_plist={
+            'NSMicrophoneUsageDescription': 'Smart Alarm needs microphone access to monitor room acoustics and detect sleep cycles.',
+        },
+    )
