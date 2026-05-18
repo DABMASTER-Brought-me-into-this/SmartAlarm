@@ -3,7 +3,7 @@ import os
 import sys
 from PyInstaller.utils.hooks import collect_all
 
-# Collecting the missing runtime dependencies cleanly inside the spec
+# Collecting the missing runtime dependencies
 ctk_datas, ctk_binaries, ctk_hiddenimports = collect_all('customtkinter')
 tk_datas, tk_binaries, tk_hiddenimports = collect_all('tkinter')
 np_datas, np_binaries, np_hiddenimports = collect_all('numpy')
@@ -14,6 +14,9 @@ current_dir = os.path.abspath('.')
 custom_binaries = []
 if sys.platform == 'darwin':
     custom_binaries = [('/Users/tuhi-macos/miniconda3/envs/smart_alarm_env/lib/libsndfile.dylib', '.')]
+elif sys.platform == 'win32':
+    # On Windows, we ensure we collect the runtime DLLs if they exist in the environment
+    pass
 
 a = Analysis(
     ['app_shrunk.py'],
@@ -42,7 +45,6 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-# 1. NAKED BOOTLOADER (Stripped of binaries to prevent memory crashing)
 exe = EXE(
     pyz,
     a.scripts,
@@ -61,7 +63,6 @@ exe = EXE(
     entitlements_file=None,
 )
 
-# 2. FOLDER COLLECTION (Safe Windows Architecture)
 coll = COLLECT(
     exe,
     a.binaries,
@@ -72,7 +73,6 @@ coll = COLLECT(
     name='TheSmartAlarmV2',
 )
 
-# 3. MAC APP BUNDLE (Safely sandboxed for macOS only)
 if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
