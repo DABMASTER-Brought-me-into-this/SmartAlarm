@@ -4,7 +4,7 @@ This project was inspired by the premium Pillow app feature called "Smart Wake U
 
 ## How It Works
 The program records 3 seconds of audio. Then, 23 features of the audio are calculated: 20 MFCCs, ZCR, RMS, and Spectral Centroid.
-The MLP(completely written in NumPy) takes those 23 features to identify the probability that the sound is a sleep movement. 
+The MLP (completely written in NumPy) takes those 23 features to identify the probability that the sound is a sleep movement. 
 The program uses a dynamic baseline to initiate the alarm. The baseline has a min probability in this setup, but can be raised. 
 The baseline uses an EMA and initiates the alarm when the probability of light sleep exceeds 2 standard deviations of the mean. 
 
@@ -14,6 +14,7 @@ MLP Architecture Breakdown:
   2. Layer 1: Linear Layer (64 Neurons), BatchNorm1D; Activation Function: ReLu
   3. Layer 2: Linear Layer (32 Neurons), BatchNorm1D; Activation Function: ReLu
   4. Layer 3: Linear Layer (1 Neuron) scaled by 0.4; Activation Function: Sigmoid
+
 Other Key Notes on the Architecture:
 I used the Kaiming He initialization for the first layer on normally distributed random numbers. The second layer was initialized with normally distributed random numbers multiplied by 0.01.
 Layer 3 is initialized the same way as layer 2, but instead of 0.01, it is multiplied by 0.2. Most initialization numbers (except for the Kaiming He Initialization) were manually tuned. 
