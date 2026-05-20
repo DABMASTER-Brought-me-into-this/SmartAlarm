@@ -79,7 +79,7 @@ class SmartAlarmLogic:
         stop_event.wait(timeout=time_to_sleep)
 
       counter = 0
-      count_threshold = 0
+      count_threshold = 10
       # Running Code Continuously Until Time Frame Exceeded
       while True:
         while now <= self.wue:
@@ -112,8 +112,8 @@ class SmartAlarmLogic:
           time.sleep(0.5)
 
           # Preventing Alarm from Trigger First 10 Runs
+          counter += 1
           if counter < count_threshold:
-            counter += 1
             continue
 
           # Running Alarm if in Light Sleep
