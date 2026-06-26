@@ -1,4 +1,5 @@
-# Smart Alarm
+# Smart Alarm 
+## WARNING: This project is frozen for the reasons at the bottom of the page
 The Smart Alarm is a local, machine-learning-powered alarm app that wakes you up when you are in the lightest stage of your sleep in a 30-minute interval. 
 This project was inspired by the premium Pillow app feature called "Smart Wake Up".
 
@@ -30,3 +31,6 @@ While the app does offer a fine-tune option, better results can be yielded by co
 
 ## Disclosure Notes
 The UI (app_shrunk.py) was generated with AI assistance. The backend (the inference model & manual backpropagation, the dynamic baseline, and the alarm sound start) was entirely developed by me.
+
+## Reasons Why This Project is Frozen
+While the App, in my opinion, was a complete success as it not only operated as intended, but did so even after aggressive cuts in computational resources used. However, the app faces multiple constraints for Mac and Windows deployment. Because this app is unsigned, this app has been blocked, and have had its feature gutted by the Apple's macOS Gatekeeper. On top of that, another limitation noted was the role in which my audio system used to record the data was extremely overfit as well, because other devices degrade the quality of this Neural Network.
